@@ -108,7 +108,6 @@ class ResendVerificationEmailView(views.APIView):
 
     def post(self, request, *args, **kwargs):
         verification_token = update_or_create_verification_token(request.user)
-        # TODO: email verification
         print(verification_token)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -133,7 +132,6 @@ class ForgotPasswordView(views.APIView):
         else:
             verification_token = update_or_create_verification_token(user)
             print(verification_token)
-            # TODO: Send password reset email
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -241,7 +239,6 @@ class ChangeEmailView(views.APIView):
         update_or_create_auth_token(request.user)
 
         verification_token = update_or_create_verification_token(request.user)
-        # TODO: email verification
         print(verification_token)
 
         return get_logged_in_user_response(
