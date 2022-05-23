@@ -12,6 +12,7 @@ create user view to create a user on your local db.
 Your task for this assignment is to implement a simple invitation system. We
 would like for an existing user to be able to send an invite to someone who is
 not yet a user. This consists of the following requirements:
+
 1. A new model for invites including `email`, `first_name`, `last_name`, as well
 as a unique `id` and a boolean `is_active`
 2. An endpoint for an existing user to create an invite, the output of which
@@ -19,6 +20,8 @@ should simply print the `id` for the invite (don't worry about email sending)
 3. An endpoint to accept an invite by `id` and create a new user. This should
 additionally mark the invite as inactive
 4. An endpoint to retrieve an invite's details given an `id`
+
+How you organize this in the project structure is up to your own discretion.
 
 ### System Requirements
 1. Python 3.10 or higher
