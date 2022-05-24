@@ -3,7 +3,7 @@ from django.urls import resolve
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
-from .utils import (
+from ..utils import (
     create_user,
     get_auth_token,
     update_or_create_verification_token,

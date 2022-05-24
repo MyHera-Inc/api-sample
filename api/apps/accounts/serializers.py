@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from api.apps.accounts.models import Invitation
 from rest_framework import serializers
 
 
@@ -39,3 +40,22 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_full_name(self, obj):
         return obj.get_full_name()
+
+
+
+class InvitationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Invitation
+        fields = ["id", "first_name", "last_name", "email", "is_active", "invited_by"]
+        depth = 1
+        extra_kwargs = {
+            "id": {"read_only": True},
+            "invited_by": {"read_only": True},
+            "is_active": {"read_only": True }
+        }
+
+    
+
+class AcceptInviteSerializer(serializers.Serializer):
+    """ Accept inites serializer """
+    password = serializers.CharField()

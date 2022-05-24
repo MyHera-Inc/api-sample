@@ -91,3 +91,20 @@ def get_logged_in_user_response(user, status):
         'user': user_data,
         'token': token.key,
     }, status=status)
+
+
+def custom_response_format(status, message, data=None, error=None):
+    """ Format json respone with a format """
+    
+    response = {
+        "message": message,
+    }
+
+    if error:
+        response["error"] = error
+
+    if data:
+        response["data"] = data
+
+    return Response(response, status=status)
+

@@ -48,3 +48,25 @@ class VerificationToken(models.Model):
 
     def is_valid(self):
         return self.is_active and timezone.now() < self.get_expiration_date()
+
+
+class ModelTimeStamp(models.Model):
+    """ An abstract timestamp for models subclassing it """
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+
+class Invitation(ModelTimeStamp):
+    """ Invitation model for managing new invited people """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
+    email = models.EmailField(unique=True)
+    is_active = models.BooleanField(default=True)
+    invited_by = models.ForeignKey(to=User, on_delete=models.DO_NOTHING)
+
+    class Meta:
+        db_table = "invitations"
