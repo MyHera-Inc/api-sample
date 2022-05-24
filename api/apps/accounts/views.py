@@ -1,20 +1,25 @@
 from django.contrib.auth import authenticate, get_user_model
 from rest_framework import generics, permissions, status, views
 from rest_framework.response import Response
+from django.forms.models import model_to_dict
+
+from api.apps.accounts.models import Invitation, User
 from ...exceptions import (
     AuthenticationFailed,
     NotFound,
     PermissionDenied
 )
 from ...utils import validate_required_fields
-from .serializers import UserSerializer
+from .serializers import AcceptInviteSerializer, InvitationSerializer, UserSerializer
 from .utils import (
     check_verification_token,
     create_user,
+    custom_response_format,
     get_logged_in_user_response,
     update_or_create_auth_token,
     update_or_create_verification_token,
 )
+
 
 
 class LogInView(views.APIView):
@@ -268,3 +273,109 @@ class UpdateUserView(views.APIView):
             request.user,
             status=status.HTTP_200_OK,
         )
+
+
+class CreateInviteView(views.APIView):
+    """
+    View creates new invite for a new user by existing user
+
+    * Authentication required
+    * Returns invitation id
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+
+    def post(self, request, **kwargs):
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
+        email = request.data.get('email')
+
+        serializer = InvitationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if Invitation.objects.filter(email=email).exists():
+            return custom_response_format(status=status.HTTP_404_NOT_FOUND, 
+                message="Email is already invited", 
+                error="invite already exists"
+            )
+        invitation = Invitation.objects.create(
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            invited_by=request.user
+        )
+        
+        return custom_response_format(status=status.HTTP_201_CREATED, 
+            message="Invitation created successfully", 
+            data={"id": invitation.id}
+        )
+
+
+class AcceptInviteView(views.APIView):
+    """
+    View accepts valid invites that exist
+    * No Authentication
+    * Require invite id
+    * Returns user
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, **kwargs):
+        print("kwargs.get) ->>", kwargs.get("id"))
+
+        serizlier = AcceptInviteSerializer(data=request.data)
+        serizlier.is_valid(raise_exception=True)
+
+        try:
+            invite = Invitation.objects.get(id=kwargs.get("id"))
+
+            if not invite.is_active:
+                return custom_response_format(status=status.HTTP_404_NOT_FOUND, 
+                    message="Invite already accepted", 
+                    error="invite already accepted"
+                )
+
+            user_obj ={
+                "first_name" : invite.first_name,
+                "last_name" : invite.last_name,
+                "email"  :  invite.email,
+                "password": serizlier.data.get("password")
+            }
+
+            user = create_user(user_obj)
+
+            invite.is_active = False
+            invite.save()
+
+            return get_logged_in_user_response(user, status=status.HTTP_201_CREATED)
+
+        except Invitation.DoesNotExist:
+            return custom_response_format(status=status.HTTP_404_NOT_FOUND, 
+                message="Invite not accepted", 
+                error="invite id not found"
+            )
+
+
+class InviteDetailView(views.APIView):
+    """
+    View retrieves user's invitation
+
+    * Authentication required
+    * Returns Inviatation object
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, **kwargs):
+        try:
+            invite = Invitation.objects.get(pk=kwargs.get("id"))
+            return custom_response_format(status=status.HTTP_200_OK, 
+                message="Invite retrieved successfully", 
+                data=model_to_dict(invite)
+            )
+        except Invitation.DoesNotExist:
+            return custom_response_format(status=status.HTTP_404_NOT_FOUND, 
+                message="Invite not found", 
+                error="Invite not found"
+            )
+
+
+
