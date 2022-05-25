@@ -38,4 +38,21 @@ urlpatterns = [
             name='resend-verification',
         ),
     ])),
+    path('invitation/', include([
+        path(
+            'new/',
+            views.UserInvitationCreateView.as_view(),
+            name='invitation-new'
+        ),
+        path(
+            '<uuid:id>',
+            views.UserInvitationRetrieveView.as_view(),
+            name='invitation'
+        ),
+        path(
+            '<uuid:id>/accept/',
+            views.UserInvitationAcceptView.as_view(),
+            name='invitation-accept'
+        )
+    ]))
 ]

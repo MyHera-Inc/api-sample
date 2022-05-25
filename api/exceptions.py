@@ -106,6 +106,12 @@ class ExternalServiceUnavailable(exceptions.APIException):
     default_code = '5031'
 
 
+class InvitationExpiredException(exceptions.APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = 'Expired invitation code'
+    default_code = 4052
+
+
 exceptions_map = [
     {
         'exception': serializers.ValidationError,

@@ -1,19 +1,21 @@
 from django.contrib.auth import authenticate, get_user_model
 from rest_framework import generics, permissions, status, views
 from rest_framework.response import Response
+
+from .models import UserInvitation
 from ...exceptions import (
     AuthenticationFailed,
     NotFound,
     PermissionDenied
 )
 from ...utils import validate_required_fields
-from .serializers import UserSerializer
+from .serializers import UserSerializer, UserInvitationSerializer
 from .utils import (
     check_verification_token,
     create_user,
     get_logged_in_user_response,
     update_or_create_auth_token,
-    update_or_create_verification_token,
+    update_or_create_verification_token, accept_invitation_and_create_user,
 )
 
 
@@ -268,3 +270,46 @@ class UpdateUserView(views.APIView):
             request.user,
             status=status.HTTP_200_OK,
         )
+
+
+class UserInvitationCreateView(generics.CreateAPIView):
+    """
+    View to create invitation.
+
+    * Authentication Required
+    * Returns invitation object
+    """
+    queryset = UserInvitation.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserInvitationSerializer
+
+
+class UserInvitationRetrieveView(generics.RetrieveAPIView):
+    """
+    View to retrieve invitation.
+    """
+    queryset = UserInvitation.objects.all()
+    permission_classes = [permissions.AllowAny]
+    serializer_class = UserInvitationSerializer
+    lookup_field = 'id'
+
+
+class UserInvitationAcceptView(generics.UpdateAPIView):
+    """
+    View to accept invitation and create user.
+
+    * No authentication.
+    * Requires invitation_id, password.
+    """
+    queryset = UserInvitation.objects.all()
+    permission_classes = [permissions.AllowAny]
+    lookup_field = 'id'
+
+    def patch(self, request, *args, **kwargs):
+        password = request.data.get('password')
+        validate_required_fields({'password': password})
+
+        invitation = self.get_object()
+        user = accept_invitation_and_create_user(invitation, password)
+        print(user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
