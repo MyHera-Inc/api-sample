@@ -1,9 +1,10 @@
 import os
 import uuid
+
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
-from ...exceptions import InternalServerError, NotFound, VerificationFailed
-from .models import VerificationToken
+from ...exceptions import InternalServerError, NotFound, VerificationFailed, InvitationExpiredException
+from .models import VerificationToken, UserInvitation
 from .serializers import UserSerializer
 
 
@@ -91,3 +92,27 @@ def get_logged_in_user_response(user, status):
         'user': user_data,
         'token': token.key,
     }, status=status)
+
+
+def create_invitation(data):
+    """create and return invitation"""
+    invitation = UserInvitation.objects.create(**data)
+    return invitation
+
+
+def accept_invitation_and_create_user(invitation, password):
+    """Accept invitation, create new user & mark invitation inactive"""
+    if not invitation.is_active:
+        raise InvitationExpiredException
+
+    user = create_user({
+        'email': invitation.email,
+        'username': invitation.email,
+        'first_name': invitation.first_name,
+        'last_name': invitation.last_name,
+        'password': password
+    })
+
+    invitation.is_active = False
+    invitation.save()
+    return user

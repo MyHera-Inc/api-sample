@@ -5,6 +5,7 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 from .utils import (
     create_user,
+    create_invitation,
     get_auth_token,
     update_or_create_verification_token,
 )
@@ -107,3 +108,38 @@ class AccountTests(APITestCase):
             response.data.get('user').get('first_name'),
             data['first_name'],
         )
+
+    def test_can_create_invitation(self):
+        url = reverse('accounts:invitation-new')
+        data = {
+            'first_name': 'Hello',
+            'last_name': 'World',
+            'email': 'hello.world@example.com'
+        }
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIsNotNone(response.data.get('id'))
+
+    def test_can_retrieve_invitation(self):
+        data = {
+            'first_name': 'Hello',
+            'last_name': 'World',
+            'email': 'hello.world@example.com',
+            'invited_by': self.user
+        }
+        invitation = create_invitation(data)
+        url = reverse('accounts:invitation', kwargs={'id': invitation.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_can_accept_invitation(self):
+        data = {
+            'first_name': 'Hello',
+            'last_name': 'World',
+            'email': 'hello.world@example.com',
+            'invited_by': self.user
+        }
+        invitation = create_invitation(data)
+        url = reverse('accounts:invitation-accept', kwargs={'id': invitation.id})
+        response = self.client.patch(url, data={'invitation_id': invitation.id, 'password': '123'})
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)

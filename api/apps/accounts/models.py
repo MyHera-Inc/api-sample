@@ -48,3 +48,19 @@ class VerificationToken(models.Model):
 
     def is_valid(self):
         return self.is_active and timezone.now() < self.get_expiration_date()
+
+
+class UserInvitation(models.Model):
+    """
+    User invitation model for new user invites
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    email = models.EmailField(unique=True)
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
+    is_active = models.BooleanField(default=True)
+    date_created = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'Invitation for user {self.email} by {str(self.invited_by)}'
